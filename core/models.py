@@ -92,3 +92,4 @@ def slugify(text: str, max_length: int = 80) -> str:
     """Turn a title into a slug: 'Melting Glaciers!' -> 'melting-glaciers'."""
     slug = re.sub(r"[^a-z0-9]+", "-", text.casefold()).strip("-")
     return slug[:max_length].rstrip("-")
+
