@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}{{ story.kid_title or story.title }}{% endblock %}
+{% block content %}
+<p><a href="/stories?status={{ story.status }}">← Back to {{ story.status }} stories</a></p>
+<h1>{{ story.kid_title or "(no kid title)" }}</h1>
+<p class="muted">
+  <span class="pill {{ story.status }}">{{ story.status }}</span>
+  · Story {{ story.id }} · {{ story.topic or "no topic" }}
+  · Reading level {{ story.reading_level if story.reading_level is not none else "?" }} (target 6–8)
+  · {{ story.model }} / prompt {{ story.prompt_version }}
+</p>
+
+<div class="grid">
+  <div>
+    {% if warnings %}
+    <div class="card warn">
+      <strong>Attribution warning.</strong> The text uses wording that credits NASA for AI-written content:
+      {{ warnings | join(", ") }}. Reject this story.
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <h2 style="margin-top:0">Summary</h2>
+      <p>{{ story.summary or "" }}</p>
+      <h2>Story</h2>
+      {% for p in paragraphs %}<p>{{ p }}</p>{% endfor %}
+    </div>
+
+    {% if story.concepts %}
+    <div class="card"><h2 style="margin-top:0">Big ideas</h2>
+      <dl>{% for c in story.concepts %}<dt>{{ c.name }}</dt><dd>{{ c.explanation }}</dd>{% endfor %}</dl>
+    </div>
+    {% endif %}
+
+    {% if story.glossary %}
+    <div class="card"><h2 style="margin-top:0">Words to know</h2>
+      <dl>{% for g in story.glossary %}<dt>{{ g.term }}</dt><dd>{{ g.definition }}</dd>{% endfor %}</dl>
+    </div>
+    {% endif %}
+
+    <div class="card quiz">
+      <h2 style="margin-top:0">Quiz ({{ (story.questions or []) | length }} questions)</h2>
+      {% for q in story.questions or [] %}
+        <p><strong>{{ loop.index }}. {{ q.prompt }}</strong></p>
+        <ol type="A">
+          {% for o in q.options %}<li class="{{ 'right' if loop.index0 == q.correct_index }}">{{ o }}{% if loop.index0 == q.correct_index %} ✓{% endif %}</li>{% endfor %}
+        </ol>
+        <p class="muted">Why: {{ q.explanation }}</p>
+      {% else %}
+        <p class="muted">No quiz.</p>
+      {% endfor %}
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0">Source</h2>
+      <p><a href="{{ story.source_url }}" target="_blank" rel="noopener noreferrer">{{ story.title }}</a>, {{ story.publisher_name }}
+        {% if story.published_on %}· {{ story.published_on }}{% endif %}
+        {% if story.author %}· {{ story.author }}{% endif %}</p>
+      <p class="muted">Image credit: {{ story.image_credit or "none" }}{% if story.image_url %} · <a href="{{ story.image_url }}" target="_blank" rel="noopener noreferrer">image</a>{% endif %}</p>
+      <p class="muted">Credit line on the site: “Based on {{ story.title }}, {{ story.publisher_name }}. Summary and quiz written by AI and checked by a person. Not reviewed or endorsed by NASA.”</p>
+      {% if story.source_text %}
+      <details><summary>Original article text (private, never published)</summary><pre>{{ story.source_text }}</pre></details>
+      {% endif %}
+    </div>
+  </div>
+
+  <aside>
+    <div class="card sticky">
+      {% if story.status == "draft" %}
+        <h2 style="margin-top:0">Review</h2>
+        <ul class="checklist muted">
+          <li>Facts match the original article</li>
+          <li>Reads at grade 6–8</li>
+          <li>Every quiz answer is in the story</li>
+          <li>Calm, kid-friendly tone, no scary wording</li>
+          <li>No “according to NASA” style wording</li>
+          <li>Image credit is NASA, not a third party</li>
+        </ul>
+        <form method="post" action="/stories/{{ story.id }}/approve">
+          <input type="hidden" name="form_token" value="{{ form_token }}">
+          <button class="btn-approve" type="submit">Approve</button>
+        </form>
+        <form method="post" action="/stories/{{ story.id }}/reject">
+          <input type="hidden" name="form_token" value="{{ form_token }}">
+          <label for="reason">Reason for rejecting</label>
+          <textarea id="reason" name="reason" required placeholder="e.g. Quiz question 3 isn't answered in the story"></textarea>
+          <button class="btn-reject" type="submit">Reject</button>
+        </form>
+      {% else %}
+        <h2 style="margin-top:0">Status: {{ story.status }}</h2>
+        {% if story.approved_at %}<p class="muted">Approved {{ story.approved_at.strftime("%b %d, %Y %H:%M UTC") }}</p>{% endif %}
+        {% if story.published_at %}<p class="muted">Published {{ story.published_at.strftime("%b %d, %Y %H:%M UTC") }}</p>{% endif %}
+        {% if story.review_notes %}<p><strong>Reason:</strong> {{ story.review_notes }}</p>{% endif %}
+        <p class="muted">Only drafts can be approved or rejected.</p>
+      {% endif %}
+    </div>
+  </aside>
+</div>
+{% endblock %}

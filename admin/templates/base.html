@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>{% block title %}Admin{% endblock %} · KidNews admin</title>
+  <style>
+    :root { --accent:#1d6b75; --bg:#f6f6f3; --surface:#fff; --border:#ddd9cf; --muted:#5d6970;
+            --good:#1f7a3d; --good-soft:#e3f4e8; --bad:#a3361f; --bad-soft:#fbe7e2; --warn-soft:#fff4d6; }
+    * { box-sizing: border-box; }
+    body { margin:0; font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; background:var(--bg); color:#1f2a2e; }
+    a { color: var(--accent); }
+    .wrap { max-width: 64rem; margin: 0 auto; padding: 0 1rem; }
+    header.top { background: var(--accent); color:#fff; }
+    header.top .wrap { display:flex; align-items:center; gap:1rem; padding:.7rem 1rem; }
+    header.top a { color:#fff; text-decoration:none; font-weight:700; }
+    .branch { margin-left:auto; font-size:.85rem; background:rgb(255 255 255 / .2); padding:.15rem .6rem; border-radius:999px; }
+    .prod-banner { background:#b3261e; color:#fff; text-align:center; font-weight:800; padding:.5rem; letter-spacing:.04em; }
+    main { padding: 1.25rem 0 3rem; }
+    h1 { font-size:1.6rem; margin:.25rem 0 .75rem; line-height:1.25; }
+    h2 { font-size:1.2rem; margin:1.75rem 0 .5rem; }
+    .flash { padding:.6rem .9rem; border-radius:8px; margin-bottom:1rem; }
+    .flash.ok { background:var(--good-soft); color:var(--good); }
+    .flash.err { background:var(--bad-soft); color:var(--bad); }
+    .tabs { display:flex; flex-wrap:wrap; gap:.4rem; margin-bottom:1rem; }
+    .tabs a { padding:.3rem .8rem; border-radius:999px; border:1px solid var(--border); background:var(--surface); text-decoration:none; color:inherit; }
+    .tabs a.on { background:var(--accent); color:#fff; border-color:var(--accent); }
+    table { width:100%; border-collapse:collapse; background:var(--surface); border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+    th, td { text-align:left; padding:.55rem .7rem; border-bottom:1px solid var(--border); vertical-align:top; }
+    th { font-size:.85rem; color:var(--muted); background:#fafaf7; }
+    .pill { display:inline-block; font-size:.8rem; padding:.05rem .55rem; border-radius:999px; background:#eee; }
+    .pill.draft { background:#e8eef8; } .pill.approved { background:var(--good-soft); color:var(--good); }
+    .pill.rejected { background:var(--bad-soft); color:var(--bad); } .pill.published { background:#e0f0ef; color:var(--accent); }
+    .muted { color:var(--muted); font-size:.9rem; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:1rem 1.2rem; margin:.75rem 0; }
+    .grid { display:grid; gap:1rem; grid-template-columns: 1fr; }
+    @media (min-width: 900px) { .grid { grid-template-columns: 2fr 1fr; } .sticky { position:sticky; top:1rem; } }
+    .warn { background:var(--warn-soft); border-color:#e6c766; }
+    .quiz ol { padding-left:1.2rem; } .quiz li.right { color:var(--good); font-weight:700; }
+    dl dt { font-weight:700; margin-top:.5rem; } dl dd { margin:0; }
+    details pre { white-space:pre-wrap; font:inherit; font-size:.92rem; background:#fafaf7; padding:.75rem; border-radius:8px; max-height:28rem; overflow:auto; }
+    button, .btn { font:inherit; font-weight:600; border:0; border-radius:8px; padding:.55rem 1rem; cursor:pointer; }
+    .btn-approve { background:var(--good); color:#fff; width:100%; }
+    .btn-reject { background:var(--bad); color:#fff; width:100%; }
+    textarea { width:100%; font:inherit; padding:.5rem; border:1px solid var(--border); border-radius:8px; min-height:5rem; }
+    label { font-weight:600; display:block; margin:.6rem 0 .3rem; }
+    ul.checklist { padding-left:1.1rem; margin:.25rem 0; }
+  </style>
+</head>
+<body>
+  {% if branch == "production" %}<div class="prod-banner">PRODUCTION DATABASE: changes here go to the live site</div>{% endif %}
+  <header class="top">
+    <div class="wrap">
+      <a href="/stories?status=draft">KidNews admin</a>
+      <span class="branch">database: {{ branch }}</span>
+    </div>
+  </header>
+  <main class="wrap">
+    {% if msg %}<p class="flash ok">{{ msg }}</p>{% endif %}
+    {% if error %}<p class="flash err">{{ error }}</p>{% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

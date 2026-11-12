@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Stories{% endblock %}
+{% block content %}
+<h1>Stories</h1>
+
+<nav class="tabs">
+  {% for s in statuses %}
+    <a href="/stories?status={{ s }}" class="{{ 'on' if s == status }}">{{ s | capitalize }} ({{ counts.get(s, 0) }})</a>
+  {% endfor %}
+  <a href="/stories?status=all" class="{{ 'on' if status == 'all' }}">All ({{ total }})</a>
+</nav>
+
+{% if rows %}
+<table>
+  <thead>
+    <tr><th>ID</th><th>Story</th><th>Status</th><th>Topic</th><th>Grade</th><th>Fetched</th></tr>
+  </thead>
+  <tbody>
+  {% for s in rows %}
+    <tr>
+      <td>{{ s.id }}</td>
+      <td>
+        <a href="/stories/{{ s.id }}">{{ s.kid_title or s.title }}</a>
+        <div class="muted">{{ s.title }}</div>
+        {% if s.status == "rejected" and s.review_notes %}<div class="muted">Reason: {{ s.review_notes }}</div>{% endif %}
+      </td>
+      <td><span class="pill {{ s.status }}">{{ s.status }}</span></td>
+      <td>{{ s.topic or "" }}</td>
+      <td>{{ s.reading_level if s.reading_level is not none else "" }}</td>
+      <td class="muted">{{ s.fetched_on.strftime("%b %d, %Y") }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="card muted">No {{ status if status != "all" else "" }} stories.</p>
+{% endif %}
+{% endblock %}

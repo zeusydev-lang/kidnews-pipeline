@@ -1,0 +1,22 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+private/
+*.egg-info
+
+# Virtual environments
+.venv
+.env
+.env.*
+!.env.example
+
+# Published site data (built from the database, never committed)
+dist/
+web/data/
+web/images/stories/
+
+# Wrangler local cache (Cloudflare account details)
+.wrangler/
