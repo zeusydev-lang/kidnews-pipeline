@@ -26,24 +26,12 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from core import stories
+from core.checks import attribution_problems
 from core.settings import database_url
 
 ROOT = Path(__file__).resolve().parent.parent
 STATUSES = ("draft", "approved", "rejected", "published")
 FORM_TOKEN = secrets.token_urlsafe(32)  # new every time the server starts
-
-# Wording the site must never use (NASA's AI guidance). Shown as warnings.
-ATTRIBUTION_PATTERNS = [
-    r"according to nasa",
-    r"nasa says",
-    r"nasa said",
-    r"nasa reports",
-    r"nasa scientists say",
-    r"nasa explains",
-    r"nasa confirms",
-    r"endorsed by nasa",
-    r"approved by nasa",
-]
 
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 
@@ -74,8 +62,7 @@ def attribution_warnings(story: dict) -> list[str]:
     fields = [story.get(k) or "" for k in ("kid_title", "summary", "body")]
     for q in story.get("questions") or []:
         fields += [q.get("prompt", ""), q.get("explanation", ""), *q.get("options", [])]
-    text = " ".join(fields).lower()
-    return [p for p in ATTRIBUTION_PATTERNS if re.search(p, text)]
+    return attribution_problems(*fields)
 
 
 def render(request: Request, name: str, **context) -> HTMLResponse:

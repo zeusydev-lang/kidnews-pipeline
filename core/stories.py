@@ -60,11 +60,23 @@ _DRAFT_COLUMNS = (
     "topic",
     "reading_level",
     "image_url",
+    "image_alt",
     "concepts",
     "glossary",
     "model",
     "prompt_version",
 )
+
+
+def get_publisher_id(name: str) -> int:
+    """The id of a publisher by name, e.g. "NASA Earth Observatory"."""
+    with connect("agent") as conn:
+        row = conn.execute(
+            "select id from publishers where name = %s", [name]
+        ).fetchone()
+    if row is None:
+        raise StoryError(f"No publisher named {name!r}. Run the migrations first.")
+    return row["id"]
 
 
 def find_existing(publisher_id: int, source_url: str) -> int | None:

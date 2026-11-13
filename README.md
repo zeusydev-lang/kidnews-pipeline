@@ -275,3 +275,30 @@ uv run python -m scripts.seed_dev
 
 It uses `save_draft` with the agent login, skips stories already there, and
 refuses to run against production.
+
+## Agent (`agent/`)
+
+Makes one draft story a day from NASA Earth Observatory.
+
+```
+uv run python -m agent.run --dry-run   # fetch, write, check, print; save nothing
+uv run python -m agent.run             # same, then save a draft (dev database)
+```
+
+1. **Fetch** (`nasa_eo.py`): the Image of the Day feed at
+   `science.nasa.gov/feed/earth-observatory/image-of-the-day` (Earth
+   Observatory moved there in December 2025). The feed includes each article's
+   HTML; the fetcher keeps the story paragraphs, the NASA-hosted main image and
+   its description, and the credit line. Images credited to someone else
+   (©, copyright, "courtesy of" a non-NASA source) are dropped.
+2. **Pick** the newest article not already stored (no model call for repeats).
+3. **Write** the story (`StoryOutput`) and then the quiz (`Quiz`) with Claude
+   through the `final_answer` tool (`structured.py`, prompts in `prompts.py`).
+   The article goes in as untrusted source material inside `<article>` tags.
+4. **Check** (`core/checks.py`): wording like "according to NASA" gets one
+   retry, then the run stops without saving. A reading level above grade 9.5
+   gets one retry, then is saved with a warning for the reviewer.
+5. **Save** with `save_draft` (agent login). A person approves on the admin page.
+
+The run stops if its model spend passes `DAILY_SPEND_CAP_USD` (default $0.25).
+`LLM_MODEL` picks the model (default `anthropic/claude-haiku-5-5`).

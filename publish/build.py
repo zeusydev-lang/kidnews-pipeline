@@ -56,6 +56,7 @@ PUBLIC_FIELDS = (
     "publisher_name",
     "published_at",
     "questions",
+    "image_alt",
 )
 INDEX_FIELDS = (
     "slug",
@@ -63,6 +64,7 @@ INDEX_FIELDS = (
     "summary",
     "topic",
     "image_url",
+    "image_alt",
     "image_credit",
     "published_at",
 )

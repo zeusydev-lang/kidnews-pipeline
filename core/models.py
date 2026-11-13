@@ -73,6 +73,7 @@ class StoryDraft(_Strict):
     topic: str | None = Field(default=None, max_length=60)
     reading_level: float | None = Field(default=None, ge=0, le=20)
     image_url: str | None = Field(default=None, pattern=r"^https?://", max_length=500)
+    image_alt: str | None = Field(default=None, max_length=1000)  # for screen readers
     concepts: list[dict[str, Any]] | None = None
     glossary: list[dict[str, Any]] | None = None
 
