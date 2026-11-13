@@ -24,7 +24,9 @@ class _Strict(BaseModel):
 
 class QuizQuestion(_Strict):
     prompt: str = Field(min_length=1, max_length=300)
-    options: list[str] = Field(min_length=OPTIONS_PER_QUESTION, max_length=OPTIONS_PER_QUESTION)
+    options: list[str] = Field(
+        min_length=OPTIONS_PER_QUESTION, max_length=OPTIONS_PER_QUESTION
+    )
     correct_index: int = Field(ge=0, lt=OPTIONS_PER_QUESTION)
     explanation: str = Field(min_length=1, max_length=400)
 
@@ -71,6 +73,7 @@ class StoryDraft(_Strict):
     topic: str | None = Field(default=None, max_length=60)
     reading_level: float | None = Field(default=None, ge=0, le=20)
     image_url: str | None = Field(default=None, pattern=r"^https?://", max_length=500)
+    image_alt: str | None = Field(default=None, max_length=1000)  # for screen readers
     concepts: list[dict[str, Any]] | None = None
     glossary: list[dict[str, Any]] | None = None
 
@@ -84,7 +87,9 @@ class StoryDraft(_Strict):
     @classmethod
     def slug_is_url_safe(cls, slug: str) -> str:
         if not SLUG_PATTERN.fullmatch(slug):
-            raise ValueError("slug must be lowercase letters, numbers and single hyphens")
+            raise ValueError(
+                "slug must be lowercase letters, numbers and single hyphens"
+            )
         return slug
 
 
@@ -92,4 +97,3 @@ def slugify(text: str, max_length: int = 80) -> str:
     """Turn a title into a slug: 'Melting Glaciers!' -> 'melting-glaciers'."""
     slug = re.sub(r"[^a-z0-9]+", "-", text.casefold()).strip("-")
     return slug[:max_length].rstrip("-")
-

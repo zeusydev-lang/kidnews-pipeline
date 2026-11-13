@@ -9,7 +9,13 @@ from publish.build import PUBLIC_FIELDS, public_story, write_site_data
 
 pytestmark = [pytest.mark.db, pytest.mark.usefixtures("clean_db")]
 
-PRIVATE = ("PRIVATE SOURCE TEXT", "review_notes", "source_text", "text_hash", "prompt_version")
+PRIVATE = (
+    "PRIVATE SOURCE TEXT",
+    "review_notes",
+    "source_text",
+    "text_hash",
+    "prompt_version",
+)
 
 
 def publish(out):
@@ -20,7 +26,7 @@ def publish(out):
 
 def test_publish_end_to_end(tmp_path, make_draft):
     approved = stories.save_draft(make_draft(1))
-    stories.save_draft(make_draft(2))                      # stays a draft
+    stories.save_draft(make_draft(2))  # stays a draft
     rejected = stories.save_draft(make_draft(3))
     stories.approve(approved)
     stories.reject(rejected, "Not accurate")
@@ -33,7 +39,9 @@ def test_publish_end_to_end(tmp_path, make_draft):
 
     files = sorted(p.name for p in (tmp_path / "data" / "stories").iterdir())
     assert files == ["story-1.json"]
-    story = json.loads((tmp_path / "data" / "stories" / "story-1.json").read_text(encoding="utf-8"))
+    story = json.loads(
+        (tmp_path / "data" / "stories" / "story-1.json").read_text(encoding="utf-8")
+    )
     assert set(story) == set(PUBLIC_FIELDS)
     assert len(story["questions"]) == 4
     assert story["publisher_name"] == "NASA Earth Observatory"
@@ -70,7 +78,9 @@ def test_images_are_never_hotlinked_without_download(tmp_path, make_draft):
     draft = make_draft(1, image_url="https://example.com/picture.jpg")
     stories.approve(stories.save_draft(draft))
     publish(tmp_path)  # images=False
-    story = json.loads((tmp_path / "data" / "stories" / "story-1.json").read_text(encoding="utf-8"))
+    story = json.loads(
+        (tmp_path / "data" / "stories" / "story-1.json").read_text(encoding="utf-8")
+    )
     assert story["image_url"] is None
 
 

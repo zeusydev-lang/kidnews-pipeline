@@ -43,16 +43,24 @@ def test_missing_story_is_404(client):
 
 def test_approve(client, make_draft):
     story_id = stories.save_draft(make_draft(1))
-    r = client.post(f"/stories/{story_id}/approve", data={"form_token": form_token(client, story_id)},
-                    follow_redirects=False)
+    r = client.post(
+        f"/stories/{story_id}/approve",
+        data={"form_token": form_token(client, story_id)},
+        follow_redirects=False,
+    )
     assert r.status_code == 303
     assert stories.get_story(story_id)["status"] == "approved"
 
 
 def test_reject_with_reason(client, make_draft):
     story_id = stories.save_draft(make_draft(1))
-    client.post(f"/stories/{story_id}/reject",
-                data={"form_token": form_token(client, story_id), "reason": "Quiz Q3 not in story"})
+    client.post(
+        f"/stories/{story_id}/reject",
+        data={
+            "form_token": form_token(client, story_id),
+            "reason": "Quiz Q3 not in story",
+        },
+    )
     story = stories.get_story(story_id)
     assert story["status"] == "rejected"
     assert story["review_notes"] == "Quiz Q3 not in story"
@@ -60,8 +68,10 @@ def test_reject_with_reason(client, make_draft):
 
 def test_reject_without_reason_shows_error(client, make_draft):
     story_id = stories.save_draft(make_draft(1))
-    r = client.post(f"/stories/{story_id}/reject",
-                    data={"form_token": form_token(client, story_id), "reason": "  "})
+    r = client.post(
+        f"/stories/{story_id}/reject",
+        data={"form_token": form_token(client, story_id), "reason": "  "},
+    )
     assert "Please write a reason" in r.text
     assert stories.get_story(story_id)["status"] == "draft"
 
@@ -97,5 +107,7 @@ def test_story_text_is_escaped(client, make_draft):
 
 
 def test_attribution_warning(client, make_draft):
-    story_id = stories.save_draft(make_draft(1, summary="According to NASA, ice is melting."))
+    story_id = stories.save_draft(
+        make_draft(1, summary="According to NASA, ice is melting.")
+    )
     assert "Attribution warning" in client.get(f"/stories/{story_id}").text

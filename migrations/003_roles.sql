@@ -52,38 +52,8 @@ grant select on publishers, stories, quizzes to kidnews_admin;
 grant update (status, review_notes) on stories to kidnews_admin;
 
 -- 5. Publish: public fields only -------------------------------------------
--- The view leaves out source_text, review_notes, text_hash and model details.
-
-create or replace view public_stories as
-select
-    s.id,
-    s.slug,
-    s.kid_title,
-    s.summary,
-    s.body,
-    s.concepts,
-    s.glossary,
-    s.topic,
-    s.reading_level,
-    s.grade_band,
-    s.image_url,
-    s.image_credit,
-    s.title        as source_title,
-    s.source_url,
-    s.author       as source_author,
-    s.published_on as source_published_on,
-    p.name         as publisher_name,
-    s.status,
-    s.approved_at,
-    s.published_at,
-    q.questions
-from stories s
-join publishers p on p.id = s.publisher_id
-left join quizzes q on q.story_id = s.id
-where s.status in ('approved', 'published');
-
-revoke all on public_stories from public;
-grant select on public_stories to kidnews_publish;
+-- The public_stories view and its grant now live in 004 (one definition,
+-- so re-running this file can't fight a newer version of the view).
 
 -- Publish can only move approved -> published, through this function.
 -- It has no direct update rights on stories.

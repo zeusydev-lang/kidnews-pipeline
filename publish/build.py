@@ -38,14 +38,43 @@ DIST_MARKER = ".kidnews-dist"  # only folders with this file are ever wiped
 
 # The only fields that ever reach the public site.
 PUBLIC_FIELDS = (
-    "slug", "kid_title", "summary", "body", "concepts", "glossary", "topic",
-    "reading_level", "grade_band", "image_url", "image_credit", "source_title",
-    "source_url", "source_author", "source_published_on", "publisher_name",
-    "published_at", "questions",
+    "slug",
+    "kid_title",
+    "summary",
+    "body",
+    "concepts",
+    "glossary",
+    "topic",
+    "reading_level",
+    "grade_band",
+    "image_url",
+    "image_credit",
+    "source_title",
+    "source_url",
+    "source_author",
+    "source_published_on",
+    "publisher_name",
+    "published_at",
+    "questions",
+    "image_alt",
 )
-INDEX_FIELDS = ("slug", "kid_title", "summary", "topic", "image_url", "image_credit", "published_at")
+INDEX_FIELDS = (
+    "slug",
+    "kid_title",
+    "summary",
+    "topic",
+    "image_url",
+    "image_alt",
+    "image_credit",
+    "published_at",
+)
 
-IMAGE_TYPES = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "image/gif": ".gif"}
+IMAGE_TYPES = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+    "image/gif": ".gif",
+}
 MAX_IMAGE_BYTES = 8 * 1024 * 1024
 
 
@@ -83,7 +112,9 @@ def download_image(url: str, slug: str, images_dir: Path) -> str | None:
         print(f"  ! {slug}: image download failed ({err}), skipping image")
         return None
     if len(data) > MAX_IMAGE_BYTES:
-        print(f"  ! {slug}: image larger than {MAX_IMAGE_BYTES // 1024 // 1024} MB, skipping image")
+        print(
+            f"  ! {slug}: image larger than {MAX_IMAGE_BYTES // 1024 // 1024} MB, skipping image"
+        )
         return None
     name = f"{slug}{IMAGE_TYPES[content_type]}"
     (images_dir / name).write_bytes(data)
@@ -93,7 +124,9 @@ def download_image(url: str, slug: str, images_dir: Path) -> str | None:
 def write_site_data(rows: list[dict], out: Path, images: bool = True) -> int:
     """Rebuild out/data and out/images/stories from the given published rows."""
     data_dir, images_dir = out / "data", out / "images" / "stories"
-    old_images = {p.name: p for p in images_dir.glob("*")} if images_dir.exists() else {}
+    old_images = (
+        {p.name: p for p in images_dir.glob("*")} if images_dir.exists() else {}
+    )
 
     with tempfile.TemporaryDirectory(dir=out) as tmp:
         tmp_data, tmp_images = Path(tmp) / "data", Path(tmp) / "images"
@@ -110,7 +143,9 @@ def write_site_data(rows: list[dict], out: Path, images: bool = True) -> int:
 
             image = story["image_url"]
             if image and images:
-                existing = next((n for n in old_images if n.rsplit(".", 1)[0] == slug), None)
+                existing = next(
+                    (n for n in old_images if n.rsplit(".", 1)[0] == slug), None
+                )
                 if existing:  # already downloaded on an earlier run
                     shutil.copy2(old_images[existing], tmp_images / existing)
                     story["image_url"] = f"images/stories/{existing}"
@@ -120,14 +155,21 @@ def write_site_data(rows: list[dict], out: Path, images: bool = True) -> int:
                 story["image_url"] = None  # never hotlink
 
             (tmp_data / "stories" / f"{slug}.json").write_text(
-                json.dumps(story, default=to_json, ensure_ascii=False, indent=2), encoding="utf-8")
+                json.dumps(story, default=to_json, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
             index.append({k: story[k] for k in INDEX_FIELDS})
 
         index.sort(key=lambda s: s["published_at"] or "", reverse=True)
         (tmp_data / "index.json").write_text(
-            json.dumps({"generated_at": datetime.now(UTC), "stories": index},
-                       default=to_json, ensure_ascii=False, indent=2),
-            encoding="utf-8")
+            json.dumps(
+                {"generated_at": datetime.now(UTC), "stories": index},
+                default=to_json,
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
 
         # Swap in the new files only after everything was written.
         shutil.rmtree(data_dir, ignore_errors=True)
@@ -141,13 +183,24 @@ def write_site_data(rows: list[dict], out: Path, images: bool = True) -> int:
 def copy_static(dest: Path) -> None:
     """Fresh copy of the site's static files (no data, no story images) into dest."""
     if dest.exists() and any(dest.iterdir()):
-        if not (dest / DIST_MARKER).exists() and dest.resolve() != (ROOT / "dist").resolve():
-            raise SystemExit(f"{dest} is not empty and wasn't made by this script. Refusing to wipe it.")
+        if (
+            not (dest / DIST_MARKER).exists()
+            and dest.resolve() != (ROOT / "dist").resolve()
+        ):
+            raise SystemExit(
+                f"{dest} is not empty and wasn't made by this script. Refusing to wipe it."
+            )
         shutil.rmtree(dest)
-    shutil.copytree(WEB, dest, ignore=lambda d, names: [
-        n for n in names
-        if (Path(d) == WEB and n == "data") or (Path(d) == WEB / "images" and n == "stories")
-    ])
+    shutil.copytree(
+        WEB,
+        dest,
+        ignore=lambda d, names: [
+            n
+            for n in names
+            if (Path(d) == WEB and n == "data")
+            or (Path(d) == WEB / "images" and n == "stories")
+        ],
+    )
     (dest / DIST_MARKER).write_text("Built by publish/build.py. Safe to delete.\n")
 
 
@@ -164,9 +217,13 @@ def publish(out: Path, images: bool = True) -> int:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Publish approved stories to the static site.")
+    parser = argparse.ArgumentParser(
+        description="Publish approved stories to the static site."
+    )
     parser.add_argument("--out", type=Path, default=WEB)
-    parser.add_argument("--no-images", action="store_true", help="don't download images")
+    parser.add_argument(
+        "--no-images", action="store_true", help="don't download images"
+    )
     args = parser.parse_args()
     publish(args.out, images=not args.no_images)
     return 0

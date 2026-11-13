@@ -33,7 +33,9 @@ class SettingsError(RuntimeError):
 def database_url(role: Role) -> str:
     """Return the connection string for one role, or fail with a clear message."""
     if role not in ENV_KEYS:
-        raise SettingsError(f"Unknown role {role!r}. Use one of: {', '.join(ENV_KEYS)}.")
+        raise SettingsError(
+            f"Unknown role {role!r}. Use one of: {', '.join(ENV_KEYS)}."
+        )
     key = ENV_KEYS[role]
     url = os.environ.get(key, "").strip()
     if not url:

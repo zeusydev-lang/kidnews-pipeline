@@ -8,7 +8,14 @@ from publish.build import DIST_MARKER, copy_static
 def test_copy_static_makes_a_clean_site(tmp_path):
     dest = tmp_path / "dist"
     copy_static(dest)
-    for name in ("index.html", "story.html", "about.html", "_headers", "css/style.css", "js/story.js"):
+    for name in (
+        "index.html",
+        "story.html",
+        "about.html",
+        "_headers",
+        "css/style.css",
+        "js/story.js",
+    ):
         assert (dest / name).exists(), name
     assert not (dest / "data").exists()
     assert (dest / DIST_MARKER).exists()

@@ -26,17 +26,12 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from core import stories
+from core.checks import attribution_problems
 from core.settings import database_url
 
 ROOT = Path(__file__).resolve().parent.parent
 STATUSES = ("draft", "approved", "rejected", "published")
 FORM_TOKEN = secrets.token_urlsafe(32)  # new every time the server starts
-
-# Wording the site must never use (NASA's AI guidance). Shown as warnings.
-ATTRIBUTION_PATTERNS = [
-    r"according to nasa", r"nasa says", r"nasa said", r"nasa reports", r"nasa scientists say",
-    r"nasa explains", r"nasa confirms", r"endorsed by nasa", r"approved by nasa",
-]
 
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 
@@ -47,7 +42,11 @@ app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost
 def branch_name() -> str:
     """Which Neon branch the admin login points at: dev, test, production or unknown."""
     host = urlsplit(database_url("admin")).hostname
-    for file, label in ((".env.production", "production"), (".env.test", "test"), (".env", "dev")):
+    for file, label in (
+        (".env.production", "production"),
+        (".env.test", "test"),
+        (".env", "dev"),
+    ):
         path = ROOT / file
         url = dotenv_values(path).get("DATABASE_URL") if path.exists() else None
         if url and urlsplit(url).hostname == host:
@@ -63,8 +62,7 @@ def attribution_warnings(story: dict) -> list[str]:
     fields = [story.get(k) or "" for k in ("kid_title", "summary", "body")]
     for q in story.get("questions") or []:
         fields += [q.get("prompt", ""), q.get("explanation", ""), *q.get("options", [])]
-    text = " ".join(fields).lower()
-    return [p for p in ATTRIBUTION_PATTERNS if re.search(p, text)]
+    return attribution_problems(*fields)
 
 
 def render(request: Request, name: str, **context) -> HTMLResponse:
@@ -75,7 +73,9 @@ def render(request: Request, name: str, **context) -> HTMLResponse:
 
 def check_token(token: str) -> None:
     if not secrets.compare_digest(token or "", FORM_TOKEN):
-        raise HTTPException(403, "Form token is missing or old. Reload the page and try again.")
+        raise HTTPException(
+            403, "Form token is missing or old. Reload the page and try again."
+        )
 
 
 def back_to(path: str, **params: str) -> RedirectResponse:
@@ -97,9 +97,22 @@ def story_list(request: Request, status: str = "draft", msg: str = "", error: st
         status = "draft"
     everything = stories.list_stories(limit=1000)
     counts = Counter(s["status"] for s in everything)
-    rows = everything if status == "all" else [s for s in everything if s["status"] == status]
-    return render(request, "list.html", rows=rows, status=status, statuses=STATUSES,
-                  counts=counts, total=len(everything), msg=msg, error=error)
+    rows = (
+        everything
+        if status == "all"
+        else [s for s in everything if s["status"] == status]
+    )
+    return render(
+        request,
+        "list.html",
+        rows=rows,
+        status=status,
+        statuses=STATUSES,
+        counts=counts,
+        total=len(everything),
+        msg=msg,
+        error=error,
+    )
 
 
 @app.get("/stories/{story_id}", response_class=HTMLResponse)
@@ -108,9 +121,18 @@ def story_page(request: Request, story_id: int, msg: str = "", error: str = ""):
         story = stories.get_story(story_id)
     except stories.StoryNotFound:
         raise HTTPException(404, f"No story {story_id}") from None
-    paragraphs = [p.strip() for p in re.split(r"\n\s*\n", story.get("body") or "") if p.strip()]
-    return render(request, "story.html", story=story, paragraphs=paragraphs,
-                  warnings=attribution_warnings(story), msg=msg, error=error)
+    paragraphs = [
+        p.strip() for p in re.split(r"\n\s*\n", story.get("body") or "") if p.strip()
+    ]
+    return render(
+        request,
+        "story.html",
+        story=story,
+        paragraphs=paragraphs,
+        warnings=attribution_warnings(story),
+        msg=msg,
+        error=error,
+    )
 
 
 # --- Actions -----------------------------------------------------------------
@@ -136,7 +158,9 @@ def reject(story_id: int, form_token: str = Form(""), reason: str = Form("")):
     except stories.StoryNotFound:
         raise HTTPException(404, f"No story {story_id}") from None
     except ValueError:
-        return back_to(f"/stories/{story_id}", error="Please write a reason before rejecting.")
+        return back_to(
+            f"/stories/{story_id}", error="Please write a reason before rejecting."
+        )
     except stories.InvalidStatusChange as err:
         return back_to(f"/stories/{story_id}", error=str(err))
     return back_to("/stories", status="draft", msg=f"Rejected story {story_id}.")

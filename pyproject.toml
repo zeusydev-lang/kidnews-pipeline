@@ -21,8 +21,13 @@ dependencies = [
 dev = [
     "httpx>=0.28.1",
     "pytest>=9.2.0",
+    "ruff>=0.17.5",
 ]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+filterwarnings = [
+    # Noise from litellm's own Pydantic models, not our code.
+    "ignore:.*ReadOnly. qualifier:UserWarning",
+]
