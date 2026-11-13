@@ -48,7 +48,7 @@ class Event(BaseModel):
 
 @dataclass
 class ExecutionContext:
-    """Storage for all execution context data, including the conversation history and tool results"""
+    """Storage for all execution context data"""
 
     execution_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     events: list[Event] = field(default_factory=list)
