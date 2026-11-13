@@ -35,15 +35,26 @@ def require_production() -> None:
     if os.environ.get("GITHUB_ACTIONS") == "true":
         return
     prod_file = ROOT / ".env.production"
-    prod_url = dotenv_values(prod_file).get("DATABASE_URL") if prod_file.exists() else None
-    if not prod_url or urlsplit(prod_url).hostname != urlsplit(database_url("publish")).hostname:
-        sys.exit("Refusing to deploy: the publish login doesn't point at production.\n"
-                 "Run: uv run --env-file .env.production python -m publish.deploy")
+    prod_url = (
+        dotenv_values(prod_file).get("DATABASE_URL") if prod_file.exists() else None
+    )
+    if (
+        not prod_url
+        or urlsplit(prod_url).hostname != urlsplit(database_url("publish")).hostname
+    ):
+        sys.exit(
+            "Refusing to deploy: the publish login doesn't point at production.\n"
+            "Run: uv run --env-file .env.production python -m publish.deploy"
+        )
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Publish and deploy to Cloudflare Pages.")
-    parser.add_argument("--build-only", action="store_true", help="build dist/ but don't upload")
+    parser = argparse.ArgumentParser(
+        description="Publish and deploy to Cloudflare Pages."
+    )
+    parser.add_argument(
+        "--build-only", action="store_true", help="build dist/ but don't upload"
+    )
     args = parser.parse_args()
 
     require_production()
@@ -58,8 +69,19 @@ def main() -> int:
     npx = shutil.which("npx")
     if not npx:
         sys.exit("npx not found. Install Node.js to deploy.")
-    command = [npx, "--yes", WRANGLER, "pages", "deploy", str(DIST),
-               "--project-name", project, "--branch", "main", "--commit-dirty=true"]
+    command = [
+        npx,
+        "--yes",
+        WRANGLER,
+        "pages",
+        "deploy",
+        str(DIST),
+        "--project-name",
+        project,
+        "--branch",
+        "main",
+        "--commit-dirty=true",
+    ]
     print(f"Uploading to Cloudflare Pages project '{project}'...")
     return subprocess.run(command, check=False).returncode
 

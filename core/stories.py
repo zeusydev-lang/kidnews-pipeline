@@ -45,9 +45,25 @@ class InvalidStatusChange(StoryError):
 # --- Agent -----------------------------------------------------------------
 
 _DRAFT_COLUMNS = (
-    "publisher_id", "source_url", "title", "author", "image_credit", "published_on",
-    "text_hash", "source_text", "kid_title", "summary", "body", "slug", "topic",
-    "reading_level", "image_url", "concepts", "glossary", "model", "prompt_version",
+    "publisher_id",
+    "source_url",
+    "title",
+    "author",
+    "image_credit",
+    "published_on",
+    "text_hash",
+    "source_text",
+    "kid_title",
+    "summary",
+    "body",
+    "slug",
+    "topic",
+    "reading_level",
+    "image_url",
+    "concepts",
+    "glossary",
+    "model",
+    "prompt_version",
 )
 
 
@@ -74,7 +90,9 @@ def save_draft(draft: StoryDraft) -> int:
         if values[key] is not None:
             values[key] = Jsonb(values[key])
 
-    insert_story = sql.SQL("insert into stories ({cols}) values ({vals}) returning id").format(
+    insert_story = sql.SQL(
+        "insert into stories ({cols}) values ({vals}) returning id"
+    ).format(
         cols=sql.SQL(", ").join(map(sql.Identifier, _DRAFT_COLUMNS)),
         vals=sql.SQL(", ").join(map(sql.Placeholder, _DRAFT_COLUMNS)),
     )
@@ -110,7 +128,8 @@ def list_stories(status: StoryStatus | None = None, limit: int = 100) -> list[di
     with connect("admin") as conn:
         if status is None:
             rows = conn.execute(
-                f"select {_LIST_COLUMNS} from stories order by id desc limit %s", [limit]
+                f"select {_LIST_COLUMNS} from stories order by id desc limit %s",
+                [limit],
             )
         else:
             rows = conn.execute(
@@ -147,7 +166,9 @@ def approve(story_id: int) -> None:
                 [story_id],
             ).fetchone()
         except errors.CheckViolation as err:
-            raise InvalidStatusChange(f"Story {story_id} is missing content needed to approve") from err
+            raise InvalidStatusChange(
+                f"Story {story_id} is missing content needed to approve"
+            ) from err
         if updated is None:
             _explain_no_change(conn, story_id, "approve")
 
@@ -171,7 +192,9 @@ def reject(story_id: int, reason: str) -> None:
 
 
 def _explain_no_change(conn: psycopg.Connection, story_id: int, action: str) -> None:
-    row = conn.execute("select status from stories where id = %s", [story_id]).fetchone()
+    row = conn.execute(
+        "select status from stories where id = %s", [story_id]
+    ).fetchone()
     if row is None:
         raise StoryNotFound(f"No story {story_id}")
     raise InvalidStatusChange(f"Can't {action} story {story_id}: it is {row['status']}")
@@ -199,6 +222,8 @@ def get_published() -> list[dict]:
 def mark_published(story_id: int) -> None:
     """approved -> published. Only works on approved stories."""
     with connect("publish") as conn:
-        ok = conn.execute("select mark_published(%s) as ok", [story_id]).fetchone()["ok"]
+        ok = conn.execute("select mark_published(%s) as ok", [story_id]).fetchone()[
+            "ok"
+        ]
     if not ok:
         raise InvalidStatusChange(f"Story {story_id} is not approved, or doesn't exist")

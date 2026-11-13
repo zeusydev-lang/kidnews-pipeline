@@ -70,9 +70,14 @@ def main() -> int:
     new_urls = {}
     with psycopg.connect(owner_url, autocommit=True) as conn:
         for role, env_key in ROLES.items():
-            exists = conn.execute("select 1 from pg_roles where rolname = %s", [role]).fetchone()
+            exists = conn.execute(
+                "select 1 from pg_roles where rolname = %s", [role]
+            ).fetchone()
             if not exists:
-                print(f"Role {role} not found. Run migrations/migrate.py first.", file=sys.stderr)
+                print(
+                    f"Role {role} not found. Run migrations/migrate.py first.",
+                    file=sys.stderr,
+                )
                 return 1
             password = secrets.token_urlsafe(32)
             conn.execute(

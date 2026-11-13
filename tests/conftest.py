@@ -23,7 +23,12 @@ from dotenv import dotenv_values
 
 ROOT = Path(__file__).resolve().parent.parent
 TEST_ENV = ROOT / ".env.test"
-KEYS = ("DATABASE_URL", "AGENT_DATABASE_URL", "ADMIN_DATABASE_URL", "PUBLISH_DATABASE_URL")
+KEYS = (
+    "DATABASE_URL",
+    "AGENT_DATABASE_URL",
+    "ADMIN_DATABASE_URL",
+    "PUBLISH_DATABASE_URL",
+)
 
 
 def _host(url: str) -> str | None:
@@ -62,7 +67,10 @@ def _load_test_env() -> tuple[str | None, str | None]:
     test_host = hosts.pop()
     for name, host in _other_hosts().items():
         if host == test_host:
-            return None, f".env.test points at the same database as {name}. Refusing to run."
+            return (
+                None,
+                f".env.test points at the same database as {name}. Refusing to run.",
+            )
 
     # Set before core.settings is imported, and override anything from .env.
     for k in KEYS:
@@ -124,7 +132,9 @@ def make_draft(publisher_id):
             "slug": f"story-{n}",
             "model": "claude-haiku-5-5",
             "prompt_version": "v1",
-            "concepts": [{"name": "Albedo", "explanation": "How much light bounces off."}],
+            "concepts": [
+                {"name": "Albedo", "explanation": "How much light bounces off."}
+            ],
             "quiz": {
                 "questions": [
                     {

@@ -42,8 +42,12 @@ def test_duplicate_slug_is_refused(make_draft):
 def test_bad_quiz_saves_nothing(make_draft):
     """If the quiz insert fails, the story must not be saved either."""
     good = make_draft(1)
-    three = [QuizQuestion.model_construct(**q.model_dump()) for q in good.quiz.questions[:3]]
-    bad = good.model_copy(update={"quiz": Quiz.model_construct(questions=three)})  # skips Python checks
+    three = [
+        QuizQuestion.model_construct(**q.model_dump()) for q in good.quiz.questions[:3]
+    ]
+    bad = good.model_copy(
+        update={"quiz": Quiz.model_construct(questions=three)}
+    )  # skips Python checks
 
     with pytest.raises(psycopg.errors.CheckViolation):
         stories.save_draft(bad)

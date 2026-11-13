@@ -54,7 +54,9 @@ def test_unknown_field_is_rejected():
         StoryDraft(**draft(status="approved"))
 
 
-@pytest.mark.parametrize("slug", ["Has-Caps", "two--hyphens", "-leading", "spaces here", "emoji-🌍"])
+@pytest.mark.parametrize(
+    "slug", ["Has-Caps", "two--hyphens", "-leading", "spaces here", "emoji-🌍"]
+)
 def test_bad_slug_is_rejected(slug):
     with pytest.raises(ValidationError):
         StoryDraft(**draft(slug=slug))
@@ -81,12 +83,15 @@ def test_correct_index_must_point_to_an_option(index):
         QuizQuestion(**question(correct_index=index))
 
 
-@pytest.mark.parametrize("options", [
-    ["Ice", "Rain", "Wind"],               # too few
-    ["Ice", "Rain", "Wind", "Sun", "Fog"],  # too many
-    ["Ice", "ice", "Wind", "Sun"],          # repeat (case-insensitive)
-    ["Ice", " ", "Wind", "Sun"],            # empty
-])
+@pytest.mark.parametrize(
+    "options",
+    [
+        ["Ice", "Rain", "Wind"],  # too few
+        ["Ice", "Rain", "Wind", "Sun", "Fog"],  # too many
+        ["Ice", "ice", "Wind", "Sun"],  # repeat (case-insensitive)
+        ["Ice", " ", "Wind", "Sun"],  # empty
+    ],
+)
 def test_bad_options_are_rejected(options):
     with pytest.raises(ValidationError):
         QuizQuestion(**question(options=options))
