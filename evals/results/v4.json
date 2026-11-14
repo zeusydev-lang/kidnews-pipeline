@@ -1,0 +1,110 @@
+{
+  "prompt_version": "v4",
+  "writer": "anthropic/claude-haiku-5-5",
+  "judge": "anthropic/claude-sonnet-5-5",
+  "measured_at": "2026-11-14T19:25:04+00:00",
+  "articles": 5,
+  "cost_usd": 0.1517,
+  "rates": {
+    "completed": {
+      "passed": 5,
+      "total": 5
+    },
+    "reading_level": {
+      "passed": 5,
+      "total": 5
+    },
+    "attribution": {
+      "passed": 5,
+      "total": 5
+    },
+    "glossary_used": {
+      "passed": 5,
+      "total": 5
+    },
+    "grounding": {
+      "passed": 2,
+      "total": 5
+    },
+    "quiz_answerable": {
+      "passed": 5,
+      "total": 5
+    },
+    "safety": {
+      "passed": 5,
+      "total": 5
+    },
+    "tone": {
+      "passed": 5,
+      "total": 5
+    }
+  },
+  "stories": [
+    {
+      "article": "A Global Rebound for Mangroves",
+      "kid_title": "Mangroves Are Making a Comeback Around the World",
+      "reading_level": 6.1,
+      "flags": {}
+    },
+    {
+      "article": "Scotland\u2019s Flow Country",
+      "kid_title": "Scotland's Soggy Flow Country Stores Carbon for Thousands of Years",
+      "reading_level": 6.9,
+      "flags": {
+        "grounding": {
+          "claims_checked": 12,
+          "unsupported": [
+            {
+              "claim": "The Flow Country is a flat land.",
+              "supported": false,
+              "evidence": "The article calls it \"hummocky\" and never says flat. Minor unsupported detail."
+            }
+          ],
+          "prompt_version": "j1"
+        }
+      }
+    },
+    {
+      "article": "Water Surges Into Navajo Reservoir",
+      "kid_title": "Heavy Fall Rain Fills Navajo Reservoir and Brings Drought Relief",
+      "reading_level": 6.7,
+      "flags": {
+        "grounding": {
+          "claims_checked": 15,
+          "unsupported": [
+            {
+              "claim": "El Ni\u00f1o involves ocean water in the central and eastern Pacific getting warmer than usual and changing winds.",
+              "supported": false,
+              "evidence": "Article mentions only the jet stream near the equatorial Pacific strengthening; warm-water definition is background, minor."
+            }
+          ],
+          "prompt_version": "j1"
+        }
+      }
+    },
+    {
+      "article": "Autumn Mornings Bring Valley Fog",
+      "kid_title": "Why Valleys Fill With Fog on Autumn Mornings",
+      "reading_level": 5.0,
+      "flags": {}
+    },
+    {
+      "article": "Ozone Hole Reaches Its 2026 Maximum",
+      "kid_title": "The Ozone Hole Reaches Its 2026 Peak",
+      "reading_level": 7.9,
+      "flags": {
+        "grounding": {
+          "claims_checked": 14,
+          "unsupported": [
+            {
+              "claim": "Because of the Montreal Protocol agreement, the ozone layer is slowly healing.",
+              "supported": false,
+              "evidence": "The article reports recovery evidence and the treaty separately but never explicitly states the recovery is a result of the treaty."
+            }
+          ],
+          "prompt_version": "j1"
+        }
+      }
+    }
+  ]
+}

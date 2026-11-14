@@ -111,7 +111,7 @@ def test_saves_a_draft(client, fake):
     assert saved["image_credit"] == ARTICLE.image_credit
     assert saved["source_text"] == ARTICLE.text
     assert saved["model"] == "anthropic/claude-haiku-5-5"
-    assert saved["prompt_version"] == "v3"
+    assert saved["prompt_version"] == "v4"
     assert saved["reading_level"] is not None
     assert len(saved["questions"]) == 4
 

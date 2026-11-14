@@ -365,3 +365,31 @@ uv run python -m scripts.judge_eval --ids 17 18 19   # compare judge models (wri
 uv run python -m scripts.eval_report                  # pass rates + judge vs your reviews
 uv run --env-file .env.production python -m scripts.eval_report
 ```
+
+### Measuring prompt changes
+
+`scripts/prompt_eval.py` runs the full write-check-judge flow (saving no
+stories) on a fixed snapshot of NASA articles in `evals/articles.json`, and
+saves a summary per prompt version in `evals/results/`.
+
+```
+uv run python -m scripts.prompt_eval --snapshot 5   # fix the article set (once)
+uv run python -m scripts.prompt_eval                # measure the current prompts
+uv run python -m scripts.prompt_eval --compare      # table across versions
+```
+
+v3 → v4 on the same 5 articles (judge: Sonnet 5.5):
+
+| Check | v3 | v4 |
+|---|---|---|
+| glossary_used | 3/5 | 5/5 |
+| grounding (stories with zero unsupported claims) | 2/5 | 2/5 |
+| **unsupported claims (total)** | **7** | **3** |
+| all other checks | 5/5 | 5/5 |
+| cost | $0.16 | $0.15 |
+
+v4 removed the "scientists use/learn/understand…" filler, numbers the model
+worked out itself, and facts credited to the wrong source. What remains is
+added background knowledge (a correct definition or description that isn't in
+the article). One run on five articles is a small, noisy sample, so the daily
+eval results keep measuring.
