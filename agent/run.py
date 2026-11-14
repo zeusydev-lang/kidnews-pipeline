@@ -209,34 +209,20 @@ def pick_article(articles: list[Article], publisher_id: int, url: str | None):
     return None
 
 
-async def run(
-    *,
-    dry_run: bool = False,
-    url: str | None = None,
-    client: LlmClient | None = None,
-    judge: LlmClient | None = None,
-    articles: list[Article] | None = None,
-    cap: float | None = None,
-) -> StoryDraft | None:
-    """One full run. Returns the draft (saved unless dry_run), or None if
-    there's nothing new."""
-    client = client or LlmClient()
-    cap = (
-        cap if cap is not None else float(os.environ.get("DAILY_SPEND_CAP_USD", "0.25"))
-    )
-    usage = LlmUsage()
+async def make_story(
+    article: Article,
+    publisher_id: int,
+    client: LlmClient,
+    judge: LlmClient,
+    usage: LlmUsage,
+    cap: float,
+) -> tuple[StoryDraft, list[EvalResult]]:
+    """Write, check and judge one story. Saves nothing.
 
-    publisher_id = stories.get_publisher_id(PUBLISHER)
-    articles = articles if articles is not None else fetch_articles()
-    article = pick_article(articles, publisher_id, url)
-    if article is None:
-        print("Nothing new in the feed. Every article is already stored.")
-        return None
-    print(
-        f"Article: {article.title} ({article.published_on}, {article.word_count} words)"
-    )
-    print(f"  {article.url}")
-
+    Used by the daily run and by scripts/prompt_eval.py, so both measure
+    exactly the same steps. Raises RunError for hard failures (including an
+    unsafe verdict).
+    """
     story, story_warnings = await write_checked(
         client,
         StoryOutput,
@@ -288,7 +274,6 @@ async def run(
     # Evals: code checks, then the judge. A judge failure (API or bad answer)
     # doesn't stop the daily story; it's recorded and flagged instead.
     evals = code_eval_results(story, quiz_output)
-    judge = judge or judge_client()
     try:
         _, judge_results = await judge_story(judge, article.text, story, quiz, usage)
     except (LlmError, StructuredOutputError) as err:
@@ -312,6 +297,40 @@ async def run(
             "The judge marked the story unsafe for kids, so it wasn't saved: "
             + (unsafe[0].details.get("notes") or "no details")
         )
+    return draft, evals
+
+
+async def run(
+    *,
+    dry_run: bool = False,
+    url: str | None = None,
+    client: LlmClient | None = None,
+    judge: LlmClient | None = None,
+    articles: list[Article] | None = None,
+    cap: float | None = None,
+) -> StoryDraft | None:
+    """One full run. Returns the draft (saved unless dry_run), or None if
+    there's nothing new."""
+    client = client or LlmClient()
+    cap = (
+        cap if cap is not None else float(os.environ.get("DAILY_SPEND_CAP_USD", "0.25"))
+    )
+    usage = LlmUsage()
+
+    publisher_id = stories.get_publisher_id(PUBLISHER)
+    articles = articles if articles is not None else fetch_articles()
+    article = pick_article(articles, publisher_id, url)
+    if article is None:
+        print("Nothing new in the feed. Every article is already stored.")
+        return None
+    print(
+        f"Article: {article.title} ({article.published_on}, {article.word_count} words)"
+    )
+    print(f"  {article.url}")
+
+    draft, evals = await make_story(
+        article, publisher_id, client, judge or judge_client(), usage, cap
+    )
 
     cost = f"${usage.cost_usd:.4f}" if usage.cost_usd is not None else "unknown"
     print(f"  tokens: {usage.input_tokens} in / {usage.output_tokens} out, cost {cost}")

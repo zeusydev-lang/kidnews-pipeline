@@ -1,0 +1,142 @@
+{
+  "prompt_version": "v3",
+  "writer": "anthropic/claude-haiku-5-5",
+  "judge": "anthropic/claude-sonnet-5-5",
+  "measured_at": "2026-11-14T19:22:36+00:00",
+  "articles": 5,
+  "cost_usd": 0.1568,
+  "rates": {
+    "completed": {
+      "passed": 5,
+      "total": 5
+    },
+    "reading_level": {
+      "passed": 5,
+      "total": 5
+    },
+    "attribution": {
+      "passed": 5,
+      "total": 5
+    },
+    "glossary_used": {
+      "passed": 3,
+      "total": 5
+    },
+    "grounding": {
+      "passed": 2,
+      "total": 5
+    },
+    "quiz_answerable": {
+      "passed": 5,
+      "total": 5
+    },
+    "safety": {
+      "passed": 5,
+      "total": 5
+    },
+    "tone": {
+      "passed": 5,
+      "total": 5
+    }
+  },
+  "stories": [
+    {
+      "article": "A Global Rebound for Mangroves",
+      "kid_title": "Mangroves Are Making a Comeback Around the World",
+      "reading_level": 6.7,
+      "flags": {}
+    },
+    {
+      "article": "Scotland\u2019s Flow Country",
+      "kid_title": "The Soggy Bogs That Store Carbon for Thousands of Years",
+      "reading_level": 6.6,
+      "flags": {
+        "grounding": {
+          "claims_checked": 14,
+          "unsupported": [
+            {
+              "claim": "The bogs' carbon storage helps scientists understand how Earth stores carbon in its land.",
+              "supported": false,
+              "evidence": "The article says the bogs store lots of carbon but does not say this helps scientists understand land carbon storage."
+            },
+            {
+              "claim": "Blanket bogs are flat landscapes.",
+              "supported": false,
+              "evidence": "The article calls the landscape \"hummocky\" and never says flat. This appears only in the Words to know entry and is minor."
+            }
+          ],
+          "prompt_version": "j1"
+        }
+      }
+    },
+    {
+      "article": "Water Surges Into Navajo Reservoir",
+      "kid_title": "Rain Fills Navajo Reservoir in the Southwest",
+      "reading_level": 7.5,
+      "flags": {
+        "glossary_used": {
+          "unused": [
+            "Runoff"
+          ]
+        },
+        "grounding": {
+          "claims_checked": 18,
+          "unsupported": [
+            {
+              "claim": "The satellite images showed the lake rising nearly 60 feet (summary).",
+              "supported": false,
+              "evidence": "The article attributes the 60-foot figure to Army Corps data; the images show the change visually but the number is not from the satellite."
+            },
+            {
+              "claim": "Three weeks earlier, on September 20, it held only 60 percent of average.",
+              "supported": false,
+              "evidence": "September 20 is about seven weeks before November 7, not three; the article just says 'September 20, when it held just 60 percent'."
+            },
+            {
+              "claim": "Researchers are still learning how these patterns steer moisture across the region.",
+              "supported": false,
+              "evidence": "The article does not say researchers are still learning about this."
+            }
+          ],
+          "prompt_version": "j1"
+        }
+      }
+    },
+    {
+      "article": "Autumn Mornings Bring Valley Fog",
+      "kid_title": "Why Morning Fog Fills the Valleys in Autumn",
+      "reading_level": 5.2,
+      "flags": {
+        "grounding": {
+          "claims_checked": 15,
+          "unsupported": [
+            {
+              "claim": "Scientists found the same pattern in these places.",
+              "supported": false,
+              "evidence": "The article only says the pattern is visible in the images (\"Notice the fog...\"); it does not say scientists found it."
+            },
+            {
+              "claim": "Scientists use these images to better understand how fog forms in low, cool valleys.",
+              "supported": false,
+              "evidence": "The article does not say how scientists use the images or that they are used to study fog formation."
+            }
+          ],
+          "prompt_version": "j1"
+        }
+      }
+    },
+    {
+      "article": "Ozone Hole Reaches Its 2026 Maximum",
+      "kid_title": "The Ozone Hole Over Antarctica in 2026",
+      "reading_level": 6.8,
+      "flags": {
+        "glossary_used": {
+          "unused": [
+            "Chlorofluorocarbons (CFCs)",
+            "Stratosphere"
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -14,7 +14,10 @@ from agent.outputs import StoryOutput
 #     glossary words must appear in the story.
 # v3: fair wrong answers (no real numbers in other units, natural wording);
 #     explanations only cite what the story or its glossary says.
-PROMPT_VERSION = "v3"
+# v4: no "scientists are learning" filler; no computed numbers; facts keep
+#     their real source; no added descriptions; glossary words copied exactly
+#     from the story. (Measured with scripts/prompt_eval.py against v3.)
+PROMPT_VERSION = "v4"
 
 STORY_INSTRUCTIONS = """\
 You write short Earth science stories for students in grades 6 to 8 (ages 11 to 14).
@@ -30,15 +33,24 @@ blank lines. Use short sentences and everyday words. Explain each science word \
 the first time you use it. Aim for a grade 6 to 8 reading level.
 - topic: 1 to 3 words, for example "Oceans", "Ice and snow", "Weather", "Forests".
 - concepts: 2 or 3 big science ideas from the story, each explained in 1 or 2 sentences.
-- glossary: 3 to 6 harder words that appear in your summary or body, with \
-kid-friendly definitions. Only define words you actually used.
+- glossary: 3 to 6 harder words from your summary or body, with kid-friendly \
+definitions. Write each term exactly as it appears in your story, without \
+abbreviations in brackets. Write the story first, then pick the glossary words \
+from it. Never define a word your story doesn't use.
 
 Rules:
 - Use your own words. Do not copy sentences from the article.
-- Only use facts that are in the article. Do not add numbers, dates, names, places \
-or causes that are not there. Keep the article's numbers, with units kids know.
+- Only use facts that are in the article. Do not add numbers, dates, names, places, \
+causes or descriptions that are not there. Keep the article's numbers, with units \
+kids know.
+- Never work out new numbers yourself, such as the time between two dates, a \
+difference or a total. Use only numbers the article gives.
+- Keep each fact tied to its real source. If a number comes from a government \
+agency's data, don't say a satellite image showed it.
+- Don't add sentences about what scientists use, study, hope to learn or are \
+still learning, unless the article says exactly that.
 - Keep a calm, curious tone. No scary or gloomy wording. When a topic is serious \
-(fires, floods, ozone loss), focus on what scientists are learning.
+(fires, floods, ozone loss), stay calm and stick to the facts the article gives.
 - Never write "according to NASA", "NASA says", or anything that suggests NASA \
 wrote, reviewed or approved this story. You may say that a NASA satellite took an \
 image, or that scientists found something.
