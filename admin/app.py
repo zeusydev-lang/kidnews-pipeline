@@ -27,7 +27,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from core import stories
 from core.checks import attribution_problems
-from core.settings import database_url
+from core.settings import SettingsError, database_url
 
 ROOT = Path(__file__).resolve().parent.parent
 STATUSES = ("draft", "approved", "rejected", "published")
@@ -40,8 +40,12 @@ app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost
 
 
 def branch_name() -> str:
-    """Which Neon branch the admin login points at: dev, test, production or unknown."""
-    host = urlsplit(database_url("admin")).hostname
+    """Which Neon branch the admin login points at: dev, test, production, unknown,
+    or "not configured" when ADMIN_DATABASE_URL isn't set (e.g. in CI)."""
+    try:
+        host = urlsplit(database_url("admin")).hostname
+    except SettingsError:
+        return "not configured"
     for file, label in (
         (".env.production", "production"),
         (".env.test", "test"),

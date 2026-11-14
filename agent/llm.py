@@ -126,7 +126,7 @@ class LlmClient:
 
         try:
             raw = await litellm.acompletion(**params)
-        except Exception as err:  # noqa: BLE001 - litellm raises many types
+        except Exception as err:
             # Type and status only: provider messages can echo request details.
             status = getattr(err, "status_code", None)
             detail = f" (HTTP {status})" if status else ""
@@ -197,8 +197,8 @@ class LlmClient:
             try:
                 arguments = json.loads(raw_args)
                 if not isinstance(arguments, dict):
-                    raise ValueError("arguments must be a JSON object")
-            except ValueError:
+                    raise TypeError("arguments must be a JSON object")
+            except (ValueError, TypeError):
                 # Keep the run going: the tool's argument check will refuse
                 # this unknown key and tell the model what went wrong.
                 arguments = {"_invalid_json": raw_args}
