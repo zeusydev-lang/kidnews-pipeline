@@ -102,7 +102,7 @@ def pytest_collection_modifyitems(config, items):
 def clean_db():
     """Empty the story tables on the test branch before each database test."""
     with psycopg.connect(os.environ["DATABASE_URL"], autocommit=True) as conn:
-        conn.execute("truncate quizzes, stories restart identity")
+        conn.execute("truncate eval_runs, quizzes, stories restart identity")
     yield
 
 

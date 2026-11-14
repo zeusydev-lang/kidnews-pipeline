@@ -134,6 +134,7 @@ def story_page(request: Request, story_id: int, msg: str = "", error: str = ""):
         story=story,
         paragraphs=paragraphs,
         warnings=attribution_warnings(story),
+        evals=stories.get_eval_results(story_id),
         msg=msg,
         error=error,
     )

@@ -2,8 +2,8 @@
 
 Each function uses the least-privileged login for its job:
 
-    agent    find_existing, save_draft
-    admin    list_stories, get_story, approve, reject
+    agent    find_existing, save_draft (with eval results)
+    admin    list_stories, get_story, get_eval_results, approve, reject
     publish  get_publishable, get_published, mark_published
 
 The database enforces the same rules (permissions, status trigger), so a bug
@@ -17,7 +17,7 @@ from psycopg import errors, sql
 from psycopg.types.json import Jsonb
 
 from core.db import connect
-from core.models import StoryDraft, StoryStatus
+from core.models import EvalResult, StoryDraft, StoryStatus
 
 # --- Errors ----------------------------------------------------------------
 
@@ -92,10 +92,11 @@ def find_existing(publisher_id: int, source_url: str) -> int | None:
     return row["id"] if row else None
 
 
-def save_draft(draft: StoryDraft) -> int:
-    """Save a story and its quiz together as a draft. Returns the new story id.
+def save_draft(draft: StoryDraft, evals: list[EvalResult] | None = None) -> int:
+    """Save a story, its quiz and its check results together as a draft.
+    Returns the new story id.
 
-    Raises DuplicateStory or SlugTaken. Nothing is saved if either insert fails.
+    Raises DuplicateStory or SlugTaken. Nothing is saved if any insert fails.
     """
     values: dict[str, Any] = draft.model_dump(include=set(_DRAFT_COLUMNS))
     for key in ("concepts", "glossary"):
@@ -117,6 +118,19 @@ def save_draft(draft: StoryDraft) -> int:
                 "insert into quizzes (story_id, questions) values (%s, %s)",
                 [story_id, Jsonb(questions)],
             )
+            for result in evals or []:
+                conn.execute(
+                    "insert into eval_runs"
+                    " (story_id, check_name, passed, details, judge_model)"
+                    " values (%s, %s, %s, %s, %s)",
+                    [
+                        story_id,
+                        result.check_name,
+                        result.passed,
+                        Jsonb(result.details),
+                        result.judge_model,
+                    ],
+                )
     except errors.UniqueViolation as err:
         constraint = err.diag.constraint_name
         if constraint == "stories_publisher_id_source_url_key":
@@ -128,6 +142,17 @@ def save_draft(draft: StoryDraft) -> int:
 
 
 # --- Admin -----------------------------------------------------------------
+
+
+def get_eval_results(story_id: int) -> list[dict]:
+    """Check results for one story, in the order they were saved."""
+    with connect("admin") as conn:
+        return conn.execute(
+            "select check_name, passed, details, judge_model, run_at"
+            " from eval_runs where story_id = %s order by id",
+            [story_id],
+        ).fetchall()
+
 
 _LIST_COLUMNS = """
     id, status, kid_title, title, slug, topic, reading_level, source_url,

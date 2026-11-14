@@ -111,3 +111,32 @@ def test_attribution_warning(client, make_draft):
         make_draft(1, summary="According to NASA, ice is melting.")
     )
     assert "Attribution warning" in client.get(f"/stories/{story_id}").text
+
+
+def test_story_page_shows_check_results(client, make_draft):
+    from core.models import EvalResult
+
+    evals = [
+        EvalResult(check_name="reading_level", passed=True, details={"grade": 6.8}),
+        EvalResult(
+            check_name="grounding",
+            passed=False,
+            details={
+                "claims_checked": 9,
+                "unsupported": [
+                    {"claim": "El Nino caused the storms.", "evidence": "Only linked."}
+                ],
+            },
+            judge_model="anthropic/claude-sonnet-5-5",
+        ),
+    ]
+    story_id = stories.save_draft(make_draft(1), evals)
+    page = client.get(f"/stories/{story_id}").text
+    assert "Checks (1/2 passed)" in page
+    assert "El Nino caused the storms." in page
+    assert "grade 6.8" in page
+
+
+def test_story_page_without_check_results(client, make_draft):
+    story_id = stories.save_draft(make_draft(1))
+    assert "No check results stored" in client.get(f"/stories/{story_id}").text

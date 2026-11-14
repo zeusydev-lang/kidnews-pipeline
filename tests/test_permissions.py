@@ -102,3 +102,39 @@ def test_cannot_skip_or_go_back(story_id, status):
             "update stories set status = %(s)s where id = %(id)s",
             {"s": status, "id": story_id},
         )
+
+
+# --- eval_runs -----------------------------------------------------------------
+
+
+def test_agent_can_record_eval_results(story_id):
+    run(
+        "agent",
+        "insert into eval_runs (story_id, check_name, passed) values (%(id)s, 'x', true)",
+        {"id": story_id},
+    )
+    rows = run(
+        "admin",
+        "select check_name from eval_runs where story_id = %(id)s",
+        {"id": story_id},
+    )
+    assert rows == [("x",)]
+
+
+@pytest.mark.parametrize(
+    ("role", "query"),
+    [
+        ("agent", "select * from eval_runs"),
+        ("agent", "delete from eval_runs"),
+        ("agent", "update eval_runs set passed = true"),
+        (
+            "admin",
+            "insert into eval_runs (story_id, check_name, passed) values (%(id)s, 'x', true)",
+        ),
+        ("admin", "delete from eval_runs"),
+        ("publish", "select * from eval_runs"),
+    ],
+)
+def test_eval_runs_permission_denied(story_id, role, query):
+    with pytest.raises(psycopg.errors.InsufficientPrivilege):
+        run(role, query, {"id": story_id})
