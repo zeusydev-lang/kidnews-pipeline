@@ -1,0 +1,70 @@
+# Daily story: publish yesterday's approved stories, then draft today's.
+#
+# Two separate jobs, so each one only gets the secrets it needs:
+#   publish -> PUBLISH_DATABASE_URL + Cloudflare token (can't write drafts)
+#   draft   -> AGENT_DATABASE_URL + Anthropic key   (can only insert drafts)
+# A person approves drafts on the local admin page in between.
+#
+# Runs every day on a schedule, or by hand from the Actions tab
+# ("Run workflow"), where you can pick just one of the jobs.
+# Scheduled runs only happen from the default branch (main).
+
+name: Daily story
+
+on:
+  schedule:
+    # 12:00 UTC (7 AM US Eastern in winter). NASA posts around 05:00 UTC.
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+    inputs:
+      task:
+        description: What to run
+        type: choice
+        options: [both, draft, publish]
+        default: both
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-story
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish approved stories and deploy the site
+    if: github.event_name == 'schedule' || inputs.task != 'draft'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      - name: Install
+        run: uv sync --locked --no-dev
+      - name: Publish and deploy to Cloudflare Pages
+        run: uv run python -m publish.deploy
+        env:
+          PUBLISH_DATABASE_URL: ${{ secrets.PUBLISH_DATABASE_URL }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+  draft:
+    name: Draft today's story
+    if: github.event_name == 'schedule' || inputs.task != 'publish'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      - name: Install
+        run: uv sync --locked --no-dev
+      - name: Fetch the newest article and save a draft
+        run: uv run python -m agent.run
+        env:
+          AGENT_DATABASE_URL: ${{ secrets.AGENT_DATABASE_URL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          DAILY_SPEND_CAP_USD: "0.25"

@@ -144,7 +144,7 @@ def parse_item(item: ET.Element) -> Article | None:
     paragraphs = [
         _clean(p)
         for p in re.findall(
-            r'<p class="wp-block-paragraph"[^>]*>(.*?)</p>', content, re.S
+            r'<p class="wp-block-paragraph"[^>]*>(.*?)</p>', content, re.DOTALL
         )
     ]
     paragraphs = [p for p in paragraphs if p]
@@ -159,7 +159,7 @@ def parse_item(item: ET.Element) -> Article | None:
         image_url = image_alt = None  # not NASA's to share; keep the story only
 
     description = item.findtext("description") or ""
-    summary_match = re.search(r"<p>(.*?)</p>", description, re.S)
+    summary_match = re.search(r"<p>(.*?)</p>", description, re.DOTALL)
 
     return Article(
         title=title,

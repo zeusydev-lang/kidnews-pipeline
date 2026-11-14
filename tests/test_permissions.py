@@ -34,8 +34,10 @@ DENIED = [
     # Agent: drafts only
     (
         "agent",
-        "insert into stories (publisher_id, source_url, title, text_hash, status) "
-        "values (1, 'https://example.com/y', 'T', 'h', 'approved')",
+        (
+            "insert into stories (publisher_id, source_url, title, text_hash, status) "
+            "values (1, 'https://example.com/y', 'T', 'h', 'approved')"
+        ),
     ),
     ("agent", "update stories set status = 'approved' where id = %(id)s"),
     ("agent", "delete from stories where id = %(id)s"),

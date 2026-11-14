@@ -124,8 +124,10 @@ async def generate_structured[T: BaseModel](
                 name=tool.name,
                 status="error",
                 content=[
-                    "Your answer didn't pass the checks. Fix these and call "
-                    f"{tool.name} again:",
+                    (
+                        "Your answer didn't pass the checks. Fix these and call "
+                        f"{tool.name} again:"
+                    ),
                     *last_problems,
                 ],
             )
