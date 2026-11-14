@@ -36,7 +36,36 @@ DEFAULT_MODEL = "anthropic/claude-haiku-5-5"
 # so verify against the provider's pricing page. Unknown models cost None.
 PRICES_PER_MILLION: dict[str, tuple[float, float]] = {
     "anthropic/claude-haiku-5-5": (0.10, 0.50),  # prompts up to 100K tokens
+    "anthropic/claude-sonnet-5-5": (2.00, 10.00),
 }
+
+# Claude models that reject a forced tool call (tool_choice "required").
+# For these, structured output uses "auto" plus an instruction instead.
+_NO_FORCED_TOOL_CHOICE = (
+    "claude-sonnet-5-5",
+    "claude-opus-5-5",
+    "claude-fable-5-1",
+    "claude-fable-5-2",
+)
+
+
+def supports_forced_tool_choice(model: str) -> bool:
+    return not any(name in model for name in _NO_FORCED_TOOL_CHOICE)
+
+
+def default_thinking(model: str) -> dict[str, Any] | None:
+    """How to turn thinking off for each Claude model, or None to leave it alone.
+
+    With thinking on, Claude's thinking blocks must be sent back on every tool
+    turn, and our Event types don't store them, so we keep it off where we can.
+    """
+    if not model.startswith("anthropic/"):
+        return None
+    if "claude-sonnet-5-5" in model:
+        return {"type": "between_tools"}  # Sonnet 5.5 rejects "disabled"
+    if "claude-opus-5-5" in model or "claude-fable-5" in model:
+        return None  # thinking can't be turned off on these
+    return {"type": "disabled"}
 
 
 class LlmError(Exception):
@@ -55,7 +84,8 @@ class LlmRequest(BaseModel):
     contents: list[ContentItem] = Field(default_factory=list)  # the conversation
     tools: list[BaseTool] = Field(default_factory=list)
     # "required" forces a tool call (structured output). Claude Haiku 5.5
-    # accepts it; Claude Opus 5.5 and Sonnet 5.5 reject it with a 400.
+    # accepts it; Claude Opus 5.5 and Sonnet 5.5 reject it with a 400
+    # (see supports_forced_tool_choice).
     tool_choice: Literal["auto", "none", "required"] = "auto"
     max_tokens: int = Field(default=4096, gt=0)
 
@@ -100,9 +130,9 @@ class LlmClient:
         api_base: str | None = None,  # only for tests or proxies
     ):
         self.model = model or os.environ.get("LLM_MODEL") or DEFAULT_MODEL
-        if thinking is None and self.model.startswith("anthropic/"):
-            thinking = {"type": "disabled"}
-        self.thinking = thinking
+        self.thinking = (
+            thinking if thinking is not None else default_thinking(self.model)
+        )
         self.timeout = timeout
         self.num_retries = num_retries
         self.api_base = api_base

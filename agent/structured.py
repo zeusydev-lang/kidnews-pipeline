@@ -16,7 +16,13 @@ from typing import Any
 from pydantic import BaseModel, ValidationError
 
 from agent.datatypes import ExecutionContext, Message, ToolResult
-from agent.llm import LlmClient, LlmRequest, LlmResponse, LlmUsage
+from agent.llm import (
+    LlmClient,
+    LlmRequest,
+    LlmResponse,
+    LlmUsage,
+    supports_forced_tool_choice,
+)
 from agent.tools import BaseTool
 
 OUTPUT_TOOL_NAME = "final_answer"
@@ -88,6 +94,13 @@ async def generate_structured[T: BaseModel](
     Pass an LlmUsage as `usage` to add up tokens and cost across attempts.
     """
     tool = make_output_tool(model_cls)
+    # Force the final_answer call where the model allows it; otherwise ask for
+    # it in the instructions (a missing call is retried below).
+    if supports_forced_tool_choice(client.model):
+        tool_choice = "required"
+    else:
+        tool_choice = "auto"
+        instructions += f"\n\nGive your answer by calling the {tool.name} tool."
     contents: list[Any] = [Message(role="user", content=user_content)]
     last_problems: list[str] = []
 
@@ -97,7 +110,7 @@ async def generate_structured[T: BaseModel](
                 instructions=instructions,
                 contents=contents,
                 tools=[tool],
-                tool_choice="required",
+                tool_choice=tool_choice,
                 max_tokens=max_tokens,
             )
         )

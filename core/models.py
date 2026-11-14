@@ -97,3 +97,12 @@ def slugify(text: str, max_length: int = 80) -> str:
     """Turn a title into a slug: 'Melting Glaciers!' -> 'melting-glaciers'."""
     slug = re.sub(r"[^a-z0-9]+", "-", text.casefold()).strip("-")
     return slug[:max_length].rstrip("-")
+
+
+class EvalResult(BaseModel):
+    """One check on one story: a code check or a judge check (build plan evals)."""
+
+    check_name: str = Field(min_length=1, max_length=60)
+    passed: bool
+    details: dict[str, Any] = Field(default_factory=dict)
+    judge_model: str | None = None  # None for checks done in code

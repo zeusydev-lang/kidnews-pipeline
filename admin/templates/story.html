@@ -19,6 +19,41 @@
     </div>
     {% endif %}
 
+    {% if evals %}
+    {% set flagged = evals | rejectattr("passed") | list %}
+    <div class="card {{ 'warn' if flagged }}">
+      <h2 style="margin-top:0">Checks ({{ evals | length - flagged | length }}/{{ evals | length }} passed)</h2>
+      <ul class="checks">
+        {% for e in evals %}
+        <li>
+          <span class="pill {{ 'approved' if e.passed else 'rejected' }}">{{ 'pass' if e.passed else 'flag' }}</span>
+          <strong>{{ e.check_name }}</strong>
+          {% if e.check_name == "reading_level" %}<span class="muted">grade {{ e.details.grade }}</span>{% endif %}
+          {% if e.check_name == "grounding" %}<span class="muted">{{ e.details.claims_checked }} claims checked</span>{% endif %}
+          {% if e.judge_model %}<span class="muted">· {{ e.judge_model }}</span>{% endif %}
+          {% if not e.passed %}
+          <ul>
+            {% for c in e.details.unsupported or [] %}
+            <li>Unsupported: “{{ c.claim }}”<br><span class="muted">{{ c.evidence }}</span></li>
+            {% endfor %}
+            {% for q in e.details.problems or [] %}
+            <li>Quiz Q{{ q.question_number }}: {{ q.note }}</li>
+            {% endfor %}
+            {% if e.details.phrases %}<li>Wording: {{ e.details.phrases | join(", ") }}</li>{% endif %}
+            {% if e.details.unused %}<li>Not in story: {{ e.details.unused | join(", ") }}</li>{% endif %}
+            {% if e.details.notes %}<li>{{ e.details.notes }}</li>{% endif %}
+            {% if e.details.error %}<li>Judge didn't run: {{ e.details.error }}</li>{% endif %}
+          </ul>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      <p class="muted">Flags are for you to weigh. Only an unsafe verdict stops a story from being saved.</p>
+    </div>
+    {% else %}
+    <div class="card"><p class="muted" style="margin:0">No check results stored for this story (it was made before evals were added).</p></div>
+    {% endif %}
+
     <div class="card">
       <h2 style="margin-top:0">Summary</h2>
       <p>{{ story.summary or "" }}</p>

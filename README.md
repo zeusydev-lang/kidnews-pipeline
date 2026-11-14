@@ -330,3 +330,38 @@ run publishes it. To publish right away, run the workflow by hand with
 `task: publish`.
 
 Scheduled runs only happen from `main`. Actions are pinned to exact commits.
+
+## Evals
+
+Every daily draft is checked before it reaches the reviewer, and every result
+is stored in `eval_runs` (setup file 005).
+
+| Check | How | If it fails |
+|---|---|---|
+| `reading_level` | Flesch-Kincaid grade, computed in code (5 to 9.5 allowed) | Flagged |
+| `attribution` | No "according to NASA"-style wording, in code | Story is retried, then stopped |
+| `glossary_used` | Every glossary word appears in the story, in code | Flagged |
+| `grounding` | Judge lists every factual claim and checks it against the NASA article | Flagged, with the unsupported claims |
+| `quiz_answerable` | Judge checks each marked answer is right and the only right one | Flagged |
+| `safety` | Judge: suitable for ages 11 to 14 | **Story is not saved** |
+| `tone` | Judge: calm, not scary or gloomy | Flagged |
+
+The judge (`agent/judge.py`) is one structured call per story to
+**Claude Sonnet 5.5** (`JUDGE_MODEL`), about $0.025 per story. The writer stays
+on Haiku 5.5. If the judge call itself fails, the draft is still saved with a
+`judge` flag. Flags show on the admin page; you decide.
+
+**Choosing the judge model** (`scripts/judge_eval.py`): both models were run
+on three drafts already reviewed by hand. Haiku 5.5 matched the approve/reject
+decision on 3/3 but gave the right reason on only one; it missed the
+unsupported El Niño claim in draft 19. Sonnet 5.5 found the real problem in
+every draft (2/3 on decisions, its one disagreement a strict but defensible
+nitpick). Since grounding problems are flagged rather than blocked, a precise
+judge matters more than a lenient one. Three stories is a small sample; the
+report below keeps measuring.
+
+```
+uv run python -m scripts.judge_eval --ids 17 18 19   # compare judge models (writes nothing)
+uv run python -m scripts.eval_report                  # pass rates + judge vs your reviews
+uv run --env-file .env.production python -m scripts.eval_report
+```

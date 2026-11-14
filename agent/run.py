@@ -5,7 +5,11 @@
   2. Write the story (StoryOutput), then check it. Wording that credits NASA,
      or a reading level far from grades 6-8, gets one retry with the problems.
   3. Write the quiz from the finished story, then check it the same way.
-  4. Save story + quiz as a draft with the agent login. A person approves it.
+  4. Evals: code checks (reading level, attribution, glossary) plus the judge
+     (agent/judge.py: grounding, quiz answerability, safety, tone). An unsafe
+     verdict stops the run; everything else is flagged for the reviewer.
+  5. Save story + quiz + eval results as a draft with the agent login.
+     A person approves it.
 
 Stops if the run's model spend passes DAILY_SPEND_CAP_USD (default $0.25).
 
@@ -22,6 +26,7 @@ import os
 import re
 import sys
 
+from agent.judge import judge_client, judge_story
 from agent.llm import LlmClient, LlmError, LlmUsage
 from agent.nasa_eo import Article, SourceError, fetch_articles
 from agent.outputs import QuizOutput, StoryOutput, to_quiz, to_story_draft
@@ -36,7 +41,7 @@ from agent.prompts import (
 from agent.structured import StructuredOutputError, generate_structured
 from core import stories
 from core.checks import READING_LEVEL_ALLOWED, attribution_problems, reading_level
-from core.models import StoryDraft
+from core.models import EvalResult, StoryDraft
 
 PUBLISHER = "NASA Earth Observatory"
 
@@ -141,6 +146,55 @@ async def write_checked[T: (StoryOutput, QuizOutput)](
     raise AssertionError("unreachable")
 
 
+def code_eval_results(story: StoryOutput, quiz_output: QuizOutput) -> list[EvalResult]:
+    """The code checks, recorded as EvalResults on the final story and quiz."""
+    grade = reading_level(story.body)
+    low, high = READING_LEVEL_ALLOWED
+    texts = [story.kid_title, story.summary, story.body]
+    texts += [f"{c.name} {c.explanation}" for c in story.concepts]
+    for q in quiz_output.questions:
+        texts += [q.prompt, q.explanation, q.correct_answer, *q.wrong_answers]
+    phrases = attribution_problems(*texts)
+    unused = unused_glossary_terms(story)
+    return [
+        EvalResult(
+            check_name="reading_level",
+            passed=low <= grade <= high,
+            details={"grade": grade, "allowed": [low, high]},
+        ),
+        EvalResult(
+            check_name="attribution",
+            passed=not phrases,
+            details={"phrases": phrases},
+        ),
+        EvalResult(
+            check_name="glossary_used",
+            passed=not unused,
+            details={"unused": unused},
+        ),
+    ]
+
+
+def describe(result: EvalResult) -> str:
+    """One line for the run log."""
+    d = result.details
+    if result.check_name == "reading_level":
+        info = f"grade {d['grade']}"
+    elif result.check_name == "grounding":
+        info = f"{d.get('claims_checked', 0)} claims, {len(d.get('unsupported', []))} unsupported"
+        for claim in d.get("unsupported", []):
+            info += f"\n        - {claim['claim']}"
+    elif result.check_name == "quiz_answerable":
+        info = f"{len(d.get('problems', []))} problems"
+    elif result.check_name in ("safety", "tone"):
+        info = d.get("notes", "") if not result.passed else ""
+    else:
+        info = ", ".join(
+            map(str, d.get("phrases") or d.get("unused") or [d.get("error", "")])
+        )
+    return f"  {'PASS' if result.passed else 'FLAG'}  {result.check_name:16} {info}".rstrip()
+
+
 def pick_article(articles: list[Article], publisher_id: int, url: str | None):
     if url:
         chosen = [a for a in articles if a.url.rstrip("/") == url.rstrip("/")]
@@ -160,6 +214,7 @@ async def run(
     dry_run: bool = False,
     url: str | None = None,
     client: LlmClient | None = None,
+    judge: LlmClient | None = None,
     articles: list[Article] | None = None,
     cap: float | None = None,
 ) -> StoryDraft | None:
@@ -230,6 +285,34 @@ async def run(
         story_warnings.append(f"Reading level is low (grade {draft.reading_level}).")
     for warning in story_warnings + quiz_warnings:
         print(f"  warning: {warning}")
+    # Evals: code checks, then the judge. A judge failure (API or bad answer)
+    # doesn't stop the daily story; it's recorded and flagged instead.
+    evals = code_eval_results(story, quiz_output)
+    judge = judge or judge_client()
+    try:
+        _, judge_results = await judge_story(judge, article.text, story, quiz, usage)
+    except (LlmError, StructuredOutputError) as err:
+        judge_results = [
+            EvalResult(
+                check_name="judge",
+                passed=False,
+                details={"error": str(err)},
+                judge_model=judge.model,
+            )
+        ]
+    evals += judge_results
+    check_budget(usage, cap)
+
+    print(f"Checks (judge: {judge.model}):")
+    for result in evals:
+        print(describe(result))
+    unsafe = [r for r in evals if r.check_name == "safety" and not r.passed]
+    if unsafe:
+        raise RunError(
+            "The judge marked the story unsafe for kids, so it wasn't saved: "
+            + (unsafe[0].details.get("notes") or "no details")
+        )
+
     cost = f"${usage.cost_usd:.4f}" if usage.cost_usd is not None else "unknown"
     print(f"  tokens: {usage.input_tokens} in / {usage.output_tokens} out, cost {cost}")
 
@@ -240,7 +323,7 @@ async def run(
         )
         return draft
 
-    story_id = stories.save_draft(draft)
+    story_id = stories.save_draft(draft, evals)
     print(f"Saved draft {story_id}. Review it on the admin page.")
     return draft
 
