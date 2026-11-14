@@ -169,3 +169,6 @@ Built by Vijay Kauvangal. Built with Claude Code as a pair-programming partner.
 Stories are based on articles from
 [NASA Earth Observatory](https://science.nasa.gov/earth/earth-observatory/).
 NASA did not write, review or endorse them.
+
+The code is under the [MIT License](LICENSE). NASA articles and images keep
+their own credits and terms.
