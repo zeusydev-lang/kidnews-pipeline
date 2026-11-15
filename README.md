@@ -39,7 +39,7 @@ flowchart LR
     G --> H[Cloudflare Pages<br/>static site]
 ```
 
-Every day at 12:00 UTC, GitHub Actions:
+Every day at 12:17 UTC, GitHub Actions:
 
 1. **Publishes** the stories approved since the last run and deploys the site.
 2. **Drafts** the newest article: fetch, write the story, write the quiz, run

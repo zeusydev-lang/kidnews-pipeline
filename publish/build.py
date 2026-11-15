@@ -27,7 +27,7 @@ import urllib.request
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlsplit
 
 from core import stories
 from core.models import SLUG_PATTERN
@@ -96,11 +96,30 @@ def public_story(row: dict) -> dict:
     return {k: row.get(k) for k in PUBLIC_FIELDS}
 
 
+# Characters a URL may already contain. Everything else (spaces, curly quotes,
+# accented letters) is percent-encoded; existing %XX escapes are kept as they are.
+_URL_SAFE = ":/?#[]@!$&'()*+,;=%~-._"
+
+
+def ascii_url(url: str) -> str:
+    """Percent-encode non-ASCII characters, which urllib refuses to send.
+
+    NASA image paths can contain characters like a curly apostrophe (’).
+    """
+    return quote(url, safe=_URL_SAFE)
+
+
 def download_image(url: str, slug: str, images_dir: Path) -> str | None:
     """Save the image locally and return its site path, or None if it can't be used."""
     if urlsplit(url).scheme != "https":
         return None
-    request = urllib.request.Request(url, headers={"User-Agent": "kidnews-publish/1.0"})
+    try:
+        request = urllib.request.Request(
+            ascii_url(url), headers={"User-Agent": "kidnews-publish/1.0"}
+        )
+    except ValueError as err:
+        print(f"  ! {slug}: unusable image URL ({err}), skipping image")
+        return None
     try:
         with urllib.request.urlopen(request, timeout=30) as response:
             content_type = response.headers.get_content_type()
@@ -108,7 +127,9 @@ def download_image(url: str, slug: str, images_dir: Path) -> str | None:
                 print(f"  ! {slug}: not an image ({content_type}), skipping image")
                 return None
             data = response.read(MAX_IMAGE_BYTES + 1)
-    except OSError as err:
+    except (OSError, ValueError) as err:
+        # ValueError covers URLs urllib still can't encode or parse: one bad
+        # image must not stop the whole deploy.
         print(f"  ! {slug}: image download failed ({err}), skipping image")
         return None
     if len(data) > MAX_IMAGE_BYTES:

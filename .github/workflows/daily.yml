@@ -13,8 +13,10 @@ name: Daily story
 
 on:
   schedule:
-    # 12:00 UTC (7 AM US Eastern in winter). NASA posts around 05:00 UTC.
-    - cron: "0 12 * * *"
+    # 12:17 UTC (about 7 AM US Eastern in winter). NASA posts around 05:00 UTC.
+    # Not on the hour: GitHub delays scheduled runs at the start of each hour,
+    # and drops some under load. The first run at "0 12" never started.
+    - cron: "17 12 * * *"
   workflow_dispatch:
     inputs:
       task:
