@@ -307,7 +307,7 @@ The run stops if its model spend passes `DAILY_SPEND_CAP_USD` (default $0.25).
 
 | Workflow | When | What |
 |---|---|---|
-| `daily.yml` (Daily story) | Every day at 12:00 UTC, or **Run workflow** in the Actions tab | `publish` job: publishes approved stories and deploys the site. `draft` job: drafts the newest article. |
+| `daily.yml` (Daily story) | Every day at 12:17 UTC, or **Run workflow** in the Actions tab | `publish` job: publishes approved stories and deploys the site. `draft` job: drafts the newest article. |
 | `ci.yml` (CI) | Every push to `main` and every pull request | Ruff lint and format check, then the tests (database tests are skipped in CI). |
 
 Each daily job gets only the secrets it needs:
@@ -324,7 +324,7 @@ on your laptop:
 uv run --env-file .env.production python -m admin
 ```
 
-A day in production: the 12:00 UTC run publishes whatever you approved since
+A day in production: the 12:17 UTC run publishes whatever you approved since
 the last run and drafts a new story; you review it on the admin page; the next
 run publishes it. To publish right away, run the workflow by hand with
 `task: publish`.
