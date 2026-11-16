@@ -331,6 +331,32 @@ run publishes it. To publish right away, run the workflow by hand with
 
 Scheduled runs only happen from `main`. Actions are pinned to exact commits.
 
+
+### Daily trigger (Cloudflare cron Worker)
+
+GitHub never fired the scheduled run on 2026-11-15 or 2026-11-16 (no
+incident reported; GitHub's schedules are best-effort and may be delayed or
+dropped). So a small Cloudflare Worker, `scheduler/` (`kidnews-scheduler`),
+starts the workflow instead: its Cron Trigger runs at **12:17 UTC** and calls
+GitHub's "run workflow" API for `daily.yml` with `task=both`. It has no public
+URL. The `schedule:` in `daily.yml` stays as a backup; if both fire, the
+`daily-story` concurrency group runs them one after the other, and the second
+does nothing new (publish finds nothing new to publish; the draft step skips an
+article that's already stored, before any Claude call).
+
+One-time setup:
+
+1. GitHub → Settings → Developer settings → **Fine-grained tokens** → Generate:
+   repository access **only `zeusydev-lang/kidnews-pipeline`**, permission
+   **Actions: Read and write**, an expiry you'll remember to renew.
+2. From `scheduler/`: `npx wrangler secret put GITHUB_TOKEN` (paste the token),
+   then `npx wrangler deploy`.
+
+Check it: `npx wrangler tail kidnews-scheduler` around 12:17 UTC shows
+"Queued daily.yml ..." or an error with the HTTP status; the Actions tab shows a
+`workflow_dispatch` run. When the token expires, the Worker logs HTTP 401:
+create a new token and repeat `wrangler secret put`.
+
 ## Evals
 
 Every daily draft is checked before it reaches the reviewer, and every result
