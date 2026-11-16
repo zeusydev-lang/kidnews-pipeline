@@ -1,0 +1,19 @@
+# Starts the "Daily story" GitHub Actions workflow every day at 12:17 UTC.
+# GitHub's own schedule in daily.yml stays as a backup: it is not guaranteed
+# to fire (it never did on 2026-11-15 or 2026-11-16).
+#
+# Secret (never in this file): npx wrangler secret put GITHUB_TOKEN
+#   a fine-grained token for zeusydev-lang/kidnews-pipeline only, with
+#   "Actions: Read and write".
+name = "kidnews-scheduler"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+workers_dev = false   # no public URL: it only runs on its schedule
+
+[vars]
+REPO = "zeusydev-lang/kidnews-pipeline"
+WORKFLOW = "daily.yml"
+REF = "main"
+
+[triggers]
+crons = ["17 12 * * *"]
