@@ -77,6 +77,36 @@ class TestParseFeed:
         assert article.image_credit == credit
         assert "Astronaut" not in article.text
 
+    def test_long_astronaut_credit_is_shortened(self):
+        # Real credit from 2026-11-17 ("Tossing Fireworks from Cloud to Cloud").
+        credit = (
+            "Astronaut photograph ISS075-E-250951 was acquired on October 28, 2026,"
+            " with a Nikon Z9 digital camera using a focal length of 14 millimeters."
+            " It is provided by the ISS Crew Earth Observations Facility and the"
+            " Earth Science and Remote Sensing Unit at NASA Johnson Space Center."
+            " The image was taken by a member of the Expedition 75 crew. The image"
+            " has been cropped and enhanced to improve contrast, and lens artifacts"
+            " have been removed. The International Space Station Program supports"
+            " the laboratory as part of the ISS National Lab to help astronauts take"
+            " pictures of Earth that will be of the greatest value to scientists and"
+            " the public, and to make those images freely available on the Internet."
+            " Additional images taken by astronauts and cosmonauts can be viewed at"
+            " the NASA/JSC Gateway to Astronaut Photography of Earth."
+            " Story by Adam Voiland."
+        )
+        [article] = parse_feed(feed(item(credit=credit)))
+        assert article.image_credit == (
+            "Astronaut photograph ISS075-E-250951 was acquired on October 28, 2026,"
+            " with a Nikon Z9 digital camera using a focal length of 14 millimeters."
+            " Story by Adam Voiland."
+        )
+
+    def test_credit_never_exceeds_300_chars(self):
+        credit = "Images by " + "Someone " * 60 + "and more."
+        [article] = parse_feed(feed(item(credit=credit)))
+        assert len(article.image_credit) <= 300
+        assert article.image_credit.endswith("…")
+
     def test_main_image_is_first_nasa_image_with_a_description(self):
         [article] = parse_feed(feed(item()))
         assert (
