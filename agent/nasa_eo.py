@@ -103,6 +103,25 @@ def _repair_xml(text: str) -> str:
     return re.sub(r'"(xmlns:)', r'" \1', text)
 
 
+MAX_CREDIT_CHARS = 300  # matches StoryDraft.image_credit
+
+
+def _short_credit(credit: str) -> str:
+    """Trim a long credit to its first sentence plus the "Story by" byline.
+
+    Astronaut-photo credits run to ~850 chars of camera specs and ISS
+    boilerplate; the first sentence says what the photo is.
+    """
+    if len(credit) <= MAX_CREDIT_CHARS:
+        return credit
+    sentences = re.split(r"(?<=\.)\s+(?=[A-Z])", credit)
+    kept = sentences[:1] + [s for s in sentences[1:] if s.startswith("Story by")]
+    short = " ".join(kept)
+    if len(short) > MAX_CREDIT_CHARS:
+        short = short[: MAX_CREDIT_CHARS - 1].rstrip() + "…"
+    return short
+
+
 def _clean(fragment: str) -> str:
     """HTML fragment -> plain text with normal spacing."""
     text = re.sub(r"<[^>]+>", "", fragment)
@@ -153,7 +172,7 @@ def parse_item(item: ET.Element) -> Article | None:
     if not body:
         return None
 
-    image_credit = credits[-1] if credits else None
+    image_credit = _short_credit(credits[-1]) if credits else None
     image_url, image_alt = _main_image(content)
     if any(THIRD_PARTY_PATTERN.search(c) for c in credits):
         image_url = image_alt = None  # not NASA's to share; keep the story only
